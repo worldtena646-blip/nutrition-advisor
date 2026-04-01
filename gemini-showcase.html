@@ -1,0 +1,757 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gemini AI 能力展示</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Microsoft YaHei', sans-serif;
+        }
+
+        :root {
+            --primary: #4285f4;
+            --primary-dark: #3367d6;
+            --secondary: #34a853;
+            --accent: #ea4335;
+            --warning: #fbbc05;
+            --light: #f8f9fa;
+            --dark: #202124;
+            --gray: #5f6368;
+            --gray-light: #dadce0;
+            --border-radius: 12px;
+            --shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+            --transition: all 0.3s ease;
+        }
+
+        body {
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4edf5 100%);
+            color: var(--dark);
+            line-height: 1.6;
+            min-height: 100vh;
+            padding-bottom: 60px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+        }
+
+        /* Header Styles */
+        header {
+            background: white;
+            box-shadow: var(--shadow);
+            padding: 1.5rem 0;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .header-content {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .logo-icon {
+            color: var(--primary);
+            font-size: 2.2rem;
+        }
+
+        .logo-text h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            color: var(--dark);
+        }
+
+        .logo-text p {
+            font-size: 0.9rem;
+            color: var(--gray);
+        }
+
+        /* Hero Section */
+        .hero {
+            padding: 4rem 0 3rem;
+            text-align: center;
+        }
+
+        .hero h2 {
+            font-size: 2.8rem;
+            margin-bottom: 1rem;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            -webkit-background-clip: text;
+            background-clip: text;
+            color: transparent;
+            font-weight: 700;
+        }
+
+        .hero p {
+            font-size: 1.2rem;
+            color: var(--gray);
+            max-width: 800px;
+            margin: 0 auto 2rem;
+        }
+
+        .ai-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            background: white;
+            padding: 8px 16px;
+            border-radius: 50px;
+            box-shadow: var(--shadow);
+            font-weight: 500;
+            margin-top: 1rem;
+        }
+
+        .ai-badge i {
+            color: var(--primary);
+        }
+
+        /* Capabilities Grid */
+        .capabilities {
+            padding: 2rem 0 4rem;
+        }
+
+        .section-title {
+            font-size: 2rem;
+            text-align: center;
+            margin-bottom: 3rem;
+            color: var(--dark);
+            position: relative;
+        }
+
+        .section-title:after {
+            content: '';
+            position: absolute;
+            bottom: -10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 60px;
+            height: 4px;
+            background: linear-gradient(to right, var(--primary), var(--secondary));
+            border-radius: 2px;
+        }
+
+        .cards-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+            gap: 30px;
+        }
+
+        .card {
+            background: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--shadow);
+            overflow: hidden;
+            transition: var(--transition);
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .card:hover {
+            transform: translateY(-8px);
+            box-shadow: 0 12px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        .card-header {
+            padding: 1.5rem 1.5rem 1rem;
+            border-bottom: 1px solid var(--gray-light);
+        }
+
+        .card-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 50px;
+            height: 50px;
+            border-radius: 12px;
+            margin-bottom: 1rem;
+            font-size: 1.5rem;
+            color: white;
+        }
+
+        .card-icon.img-gen { background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%); }
+        .card-icon.writing { background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%); }
+        .card-icon.brainstorm { background: linear-gradient(135deg, #43e97b 0%, #38f9d7 100%); }
+        .card-icon.design { background: linear-gradient(135deg, #fa709a 0%, #fee140 100%); }
+        .card-icon.analysis { background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%); color: #333; }
+        .card-icon.social { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); }
+        .card-icon.books { background: linear-gradient(135deg, #ff9a9e 0%, #fad0c4 100%); }
+        .card-icon.fashion { background: linear-gradient(135deg, #a18cd1 0%, #fbc2eb 100%); }
+        .card-icon.movies { background: linear-gradient(135deg, #ffecd2 0%, #fcb69f 100%); color: #333; }
+
+        .card-header h3 {
+            font-size: 1.4rem;
+            margin-bottom: 0.5rem;
+            color: var(--dark);
+        }
+
+        .card-header p {
+            color: var(--gray);
+            font-size: 0.95rem;
+        }
+
+        .card-content {
+            padding: 1.5rem;
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .example {
+            background: var(--light);
+            border-radius: 10px;
+            padding: 1.2rem;
+            margin-bottom: 1.2rem;
+            border-left: 4px solid var(--primary);
+        }
+
+        .user-query {
+            margin-bottom: 1rem;
+        }
+
+        .query-label, .response-label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            color: var(--gray);
+            margin-bottom: 6px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .query-label i {
+            color: var(--primary);
+        }
+
+        .response-label i {
+            color: var(--secondary);
+        }
+
+        .query-text, .response-text {
+            background: white;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--gray-light);
+            font-size: 1rem;
+            line-height: 1.5;
+        }
+
+        .response-text {
+            border-left: 3px solid var(--secondary);
+        }
+
+        .capability-list {
+            list-style: none;
+            margin-top: auto;
+        }
+
+        .capability-list li {
+            padding: 8px 0;
+            border-bottom: 1px dashed var(--gray-light);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .capability-list li:last-child {
+            border-bottom: none;
+        }
+
+        .capability-list i {
+            color: var(--secondary);
+            font-size: 0.9rem;
+        }
+
+        /* Footer */
+        footer {
+            text-align: center;
+            padding: 2rem 0;
+            color: var(--gray);
+            font-size: 0.9rem;
+            border-top: 1px solid var(--gray-light);
+            margin-top: 2rem;
+        }
+
+        .footer-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 1rem;
+        }
+
+        .footer-links a {
+            color: var(--primary);
+            text-decoration: none;
+            transition: var(--transition);
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .hero h2 {
+                font-size: 2.2rem;
+            }
+
+            .cards-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .header-content {
+                flex-direction: column;
+                gap: 15px;
+                text-align: center;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="container">
+            <div class="header-content">
+                <div class="logo">
+                    <i class="fas fa-robot logo-icon"></i>
+                    <div class="logo-text">
+                        <h1>Gemini AI 展示</h1>
+                        <p>探索 Google AI 的强大能力</p>
+                    </div>
+                </div>
+                <div class="ai-badge">
+                    <i class="fas fa-bolt"></i>
+                    <span>基于 Gemini 分享内容创建</span>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="hero">
+            <div class="container">
+                <h2>体验 AI 的无限可能</h2>
+                <p>本页面展示了 Google Gemini AI 的各种强大功能，包括图像生成、内容创作、头脑风暴、设计辅助等。这些示例基于实际的 Gemini 交互场景。</p>
+                <div class="ai-badge">
+                    <i class="fas fa-share-alt"></i>
+                    <span>源自 Gemini 分享链接: 66b4b1f9e9a2</span>
+                </div>
+            </div>
+        </section>
+
+        <section class="capabilities">
+            <div class="container">
+                <h2 class="section-title">AI 能力展示</h2>
+                <div class="cards-grid">
+
+                    <!-- 图像生成 -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon img-gen">
+                                <i class="fas fa-image"></i>
+                            </div>
+                            <h3>图像生成</h3>
+                            <p>根据文本描述创建高质量图像</p>
+                        </div>
+                        <div class="card-content">
+                            <div class="example">
+                                <div class="user-query">
+                                    <div class="query-label">
+                                        <i class="fas fa-user"></i>
+                                        <span>用户请求</span>
+                                    </div>
+                                    <div class="query-text">
+                                        "Generate an image of a futuristic car driving through an old mountain road"
+                                    </div>
+                                </div>
+                                <div class="ai-response">
+                                    <div class="response-label">
+                                        <i class="fas fa-robot"></i>
+                                        <span>AI 响应</span>
+                                    </div>
+                                    <div class="response-text">
+                                        生成一张未来主义汽车行驶在古老山路上的图像，结合复古与现代元素，展现科技与自然的对比。
+                                    </div>
+                                </div>
+                            </div>
+                            <ul class="capability-list">
+                                <li><i class="fas fa-check-circle"></i> 根据详细描述生成视觉内容</li>
+                                <li><i class="fas fa-check-circle"></i> 融合不同时代和风格元素</li>
+                                <li><i class="fas fa-check-circle"></i> 创建具有艺术感的场景</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 写作辅助 -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon writing">
+                                <i class="fas fa-edit"></i>
+                            </div>
+                            <h3>写作辅助</h3>
+                            <p>优化和重写文本内容</p>
+                        </div>
+                        <div class="card-content">
+                            <div class="example">
+                                <div class="user-query">
+                                    <div class="query-label">
+                                        <i class="fas fa-user"></i>
+                                        <span>用户请求</span>
+                                    </div>
+                                    <div class="query-text">
+                                        "Rewrite this email draft to make it more clear and concise"
+                                    </div>
+                                </div>
+                                <div class="ai-response">
+                                    <div class="response-label">
+                                        <i class="fas fa-robot"></i>
+                                        <span>AI 响应</span>
+                                    </div>
+                                    <div class="response-text">
+                                        将邮件草稿重写为更清晰、简洁的版本，改进逻辑结构，使用更专业的语气，同时保持原意。
+                                    </div>
+                                </div>
+                            </div>
+                            <ul class="capability-list">
+                                <li><i class="fas fa-check-circle"></i> 改进文本清晰度和简洁性</li>
+                                <li><i class="fas fa-check-circle"></i> 优化语气和专业性</li>
+                                <li><i class="fas fa-check-circle"></i> 保持原文核心信息</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 头脑风暴 -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon brainstorm">
+                                <i class="fas fa-lightbulb"></i>
+                            </div>
+                            <h3>创意头脑风暴</h3>
+                            <p>生成创新想法和解决方案</p>
+                        </div>
+                        <div class="card-content">
+                            <div class="example">
+                                <div class="user-query">
+                                    <div class="query-label">
+                                        <i class="fas fa-user"></i>
+                                        <span>用户请求</span>
+                                    </div>
+                                    <div class="query-text">
+                                        "Brainstorm ways to make instant noodles even more delicious"
+                                    </div>
+                                </div>
+                                <div class="ai-response">
+                                    <div class="response-label">
+                                        <i class="fas fa-robot"></i>
+                                        <span>AI 响应</span>
+                                    </div>
+                                    <div class="response-text">
+                                        提供10种创意方法升级方便面，包括添加新鲜食材、创意调味、烹饪技巧改进等。
+                                    </div>
+                                </div>
+                            </div>
+                            <ul class="capability-list">
+                                <li><i class="fas fa-check-circle"></i> 为日常问题提供创新解决方案</li>
+                                <li><i class="fas fa-check-circle"></i> 生成多样化想法列表</li>
+                                <li><i class="fas fa-check-circle"></i> 结合实用性和创意性</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 设计辅助 -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon design">
+                                <i class="fas fa-palette"></i>
+                            </div>
+                            <h3>设计辅助</h3>
+                            <p>创建设计概要和创意方案</p>
+                        </div>
+                        <div class="card-content">
+                            <div class="example">
+                                <div class="user-query">
+                                    <div class="query-label">
+                                        <i class="fas fa-user"></i>
+                                        <span>用户请求</span>
+                                    </div>
+                                    <div class="query-text">
+                                        "Draft a design brief for your bookstore's new logo"
+                                    </div>
+                                </div>
+                                <div class="ai-response">
+                                    <div class="response-label">
+                                        <i class="fas fa-robot"></i>
+                                        <span>AI 响应</span>
+                                    </div>
+                                    <div class="response-text">
+                                        创建书店新logo的设计概要，包括品牌定位、目标受众、设计风格要求、颜色方案建议等。
+                                    </div>
+                                </div>
+                            </div>
+                            <ul class="capability-list">
+                                <li><i class="fas fa-check-circle"></i> 创建专业设计文档</li>
+                                <li><i class="fas fa-check-circle"></i> 考虑品牌定位和目标受众</li>
+                                <li><i class="fas fa-check-circle"></i> 提供具体的设计方向</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 分析比较 -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon analysis">
+                                <i class="fas fa-chart-bar"></i>
+                            </div>
+                            <h3>分析比较</h3>
+                            <p>提供优缺点分析和决策支持</p>
+                        </div>
+                        <div class="card-content">
+                            <div class="example">
+                                <div class="user-query">
+                                    <div class="query-label">
+                                        <i class="fas fa-user"></i>
+                                        <span>用户请求</span>
+                                    </div>
+                                    <div class="query-text">
+                                        "List advantages and disadvantages to consider before buying a smart watch"
+                                    </div>
+                                </div>
+                                <div class="ai-response">
+                                    <div class="response-label">
+                                        <i class="fas fa-robot"></i>
+                                        <span>AI 响应</span>
+                                    </div>
+                                    <div class="response-text">
+                                        详细列出购买智能手表的优缺点，包括健康追踪、通知管理、电池续航、隐私问题、成本等各个方面。
+                                    </div>
+                                </div>
+                            </div>
+                            <ul class="capability-list">
+                                <li><i class="fas fa-check-circle"></i> 提供全面优缺点分析</li>
+                                <li><i class="fas fa-check-circle"></i> 支持决策制定</li>
+                                <li><i class="fas fa-check-circle"></i> 考虑多方面因素</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 社交媒体 -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon social">
+                                <i class="fas fa-hashtag"></i>
+                            </div>
+                            <h3>社交媒体内容</h3>
+                            <p>创建吸引人的社交媒体内容</p>
+                        </div>
+                        <div class="card-content">
+                            <div class="example">
+                                <div class="user-query">
+                                    <div class="query-label">
+                                        <i class="fas fa-user"></i>
+                                        <span>用户请求</span>
+                                    </div>
+                                    <div class="query-text">
+                                        "Give me caption options to tell the world about my new fur baby, Finn"
+                                    </div>
+                                </div>
+                                <div class="ai-response">
+                                    <div class="response-label">
+                                        <i class="fas fa-robot"></i>
+                                        <span>AI 响应</span>
+                                    </div>
+                                    <div class="response-text">
+                                        提供5种不同风格的标题选项，用于介绍新宠物Finn，包括温馨、幽默、简洁等不同风格。
+                                    </div>
+                                </div>
+                            </div>
+                            <ul class="capability-list">
+                                <li><i class="fas fa-check-circle"></i> 生成多种风格的内容选项</li>
+                                <li><i class="fas fa-check-circle"></i> 适合不同社交平台</li>
+                                <li><i class="fas fa-check-circle"></i> 创造情感共鸣</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 图书推荐 -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon books">
+                                <i class="fas fa-book"></i>
+                            </div>
+                            <h3>图书推荐</h3>
+                            <p>根据兴趣生成个性化书单</p>
+                        </div>
+                        <div class="card-content">
+                            <div class="example">
+                                <div class="user-query">
+                                    <div class="query-label">
+                                        <i class="fas fa-user"></i>
+                                        <span>用户请求</span>
+                                    </div>
+                                    <div class="query-text">
+                                        "Recommend books for someone interested in science fiction and philosophy"
+                                    </div>
+                                </div>
+                                <div class="ai-response">
+                                    <div class="response-label">
+                                        <i class="fas fa-robot"></i>
+                                        <span>AI 响应</span>
+                                    </div>
+                                    <div class="response-text">
+                                        推荐结合科幻与哲学主题的书单，包括经典作品和现代小说，每本书附带简要说明和推荐理由。
+                                    </div>
+                                </div>
+                            </div>
+                            <ul class="capability-list">
+                                <li><i class="fas fa-check-circle"></i> 根据特定兴趣生成个性化推荐</li>
+                                <li><i class="fas fa-check-circle"></i> 提供详细说明和理由</li>
+                                <li><i class="fas fa-check-circle"></i> 包含不同类型和时代的作品</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 时尚趋势 -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon fashion">
+                                <i class="fas fa-tshirt"></i>
+                            </div>
+                            <h3>时尚趋势分析</h3>
+                            <p>提供时尚建议和趋势分析</p>
+                        </div>
+                        <div class="card-content">
+                            <div class="example">
+                                <div class="user-query">
+                                    <div class="query-label">
+                                        <i class="fas fa-user"></i>
+                                        <span>用户请求</span>
+                                    </div>
+                                    <div class="query-text">
+                                        "What are the current fashion trends for summer?"
+                                    </div>
+                                </div>
+                                <div class="ai-response">
+                                    <div class="response-label">
+                                        <i class="fas fa-robot"></i>
+                                        <span>AI 响应</span>
+                                    </div>
+                                    <div class="response-text">
+                                        分析当前夏季时尚趋势，包括流行颜色、面料、款式，并提供搭配建议和购买指南。
+                                    </div>
+                                </div>
+                            </div>
+                            <ul class="capability-list">
+                                <li><i class="fas fa-check-circle"></i> 分析当前时尚趋势</li>
+                                <li><i class="fas fa-check-circle"></i> 提供实用搭配建议</li>
+                                <li><i class="fas fa-check-circle"></i> 考虑不同场合和风格</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- 电影指南 -->
+                    <div class="card">
+                        <div class="card-header">
+                            <div class="card-icon movies">
+                                <i class="fas fa-film"></i>
+                            </div>
+                            <h3>电影马拉松指南</h3>
+                            <p>创建主题电影观看列表</p>
+                        </div>
+                        <div class="card-content">
+                            <div class="example">
+                                <div class="user-query">
+                                    <div class="query-label">
+                                        <i class="fas fa-user"></i>
+                                        <span>用户请求</span>
+                                    </div>
+                                    <div class="query-text">
+                                        "Create a movie marathon guide for classic sci-fi films"
+                                    </div>
+                                </div>
+                                <div class="ai-response">
+                                    <div class="response-label">
+                                        <i class="fas fa-robot"></i>
+                                        <span>AI 响应</span>
+                                    </div>
+                                    <div class="response-text">
+                                        创建经典科幻电影马拉松指南，包括电影顺序、观看时间、主题分析，以及观影间隙的讨论话题。
+                                    </div>
+                                </div>
+                            </div>
+                            <ul class="capability-list">
+                                <li><i class="fas fa-check-circle"></i> 创建主题电影列表</li>
+                                <li><i class="fas fa-check-circle"></i> 提供观看顺序和时间安排</li>
+                                <li><i class="fas fa-check-circle"></i> 包含背景信息和讨论话题</li>
+                            </ul>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer>
+        <div class="container">
+            <p>本页面基于 Google Gemini 分享内容创建，展示了 AI 在各种场景下的应用能力。</p>
+            <p>所有示例均来自实际的 Gemini AI 交互场景。</p>
+            <div class="footer-links">
+                <a href="#"><i class="fas fa-external-link-alt"></i> Gemini 官方网站</a>
+                <a href="#"><i class="fas fa-info-circle"></i> 关于此项目</a>
+                <a href="#"><i class="fas fa-code"></i> 查看源代码</a>
+            </div>
+            <p style="margin-top: 20px; font-size: 0.8rem;">© 2026 AI 能力展示页面 | 基于 Gemini 分享链接: 66b4b1f9e9a2</p>
+        </div>
+    </footer>
+
+    <script>
+        // 简单的交互效果
+        document.addEventListener('DOMContentLoaded', function() {
+            // 卡片悬停效果增强
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(card => {
+                card.addEventListener('mouseenter', function() {
+                    const icon = this.querySelector('.card-icon i');
+                    if (icon) {
+                        icon.style.transform = 'scale(1.1)';
+                        icon.style.transition = 'transform 0.3s ease';
+                    }
+                });
+
+                card.addEventListener('mouseleave', function() {
+                    const icon = this.querySelector('.card-icon i');
+                    if (icon) {
+                        icon.style.transform = 'scale(1)';
+                    }
+                });
+            });
+
+            // 页面加载动画
+            setTimeout(() => {
+                document.body.style.opacity = 1;
+                document.body.style.transition = 'opacity 0.5s ease';
+            }, 100);
+
+            // 初始设置
+            document.body.style.opacity = 0;
+        });
+
+        // 控制台信息
+        console.log('Gemini AI 能力展示页面已加载');
+        console.log('基于分享链接: https://gemini.google.com/share/66b4b1f9e9a2');
+    </script>
+</body>
+</html>

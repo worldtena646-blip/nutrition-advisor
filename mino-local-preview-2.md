@@ -1,0 +1,77 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - generic [ref=e3]:
+      - generic [ref=e4]: AI 智能营养师
+      - generic [ref=e5]: 公开演示版。主体交互已恢复，在线模型/Firebase 能力已切到本地演示兜底。
+    - generic [ref=e6]:
+      - generic [ref=e7]: 可公开静态部署
+      - generic [ref=e8]: 页面已加载
+  - iframe [ref=e11]:
+    - generic [ref=f2e3]:
+      - banner [ref=f2e4]:
+        - generic [ref=f2e7]:
+          - img [ref=f2e9]
+          - generic [ref=f2e11]:
+            - heading "AI 智能营养师" [level=1] [ref=f2e12]
+            - paragraph [ref=f2e13]:
+              - img [ref=f2e14]
+              - text: 底层规则已强制锁定为 DGA 2025-2030
+      - main [ref=f2e17]:
+        - generic [ref=f2e18]:
+          - button "打卡挑战" [ref=f2e19] [cursor=pointer]:
+            - img [ref=f2e20]
+            - text: 打卡挑战
+          - button "每日食谱" [ref=f2e23] [cursor=pointer]:
+            - img [ref=f2e24]
+            - text: 每日食谱
+          - button "人群指南" [ref=f2e27] [cursor=pointer]:
+            - img [ref=f2e28]
+            - text: 人群指南
+          - button "真实食物识别" [ref=f2e33] [cursor=pointer]:
+            - img [ref=f2e34]
+            - text: 真实食物识别
+        - generic [ref=f2e39]:
+          - generic [ref=f2e40]:
+            - heading "真实食物践行者" [level=2] [ref=f2e41]
+            - paragraph [ref=f2e42]: 拒绝超加工食品，每一天的坚持都在重塑你的基因表达
+          - generic [ref=f2e43]:
+            - img [ref=f2e45]
+            - heading "已累计践行真实饮食 1 天" [level=3] [ref=f2e51]
+            - paragraph [ref=f2e52]: 干得漂亮！你今天摄入的 1.2-1.6g/kg 蛋白质正在构建强大的肌肉！
+            - button "今日已达成 ✅" [disabled] [ref=f2e53]
+  - generic [ref=e12]:
+    - generic [ref=e13]:
+      - generic [ref=e14]:
+        - generic [ref=e15]: 知识库 / 数据底座
+        - generic [ref=e16]: 已接入 5 份资料，其中食物成分表已结构化。
+      - generic [ref=e17]: 本地知识增强
+    - generic [ref=e18]:
+      - generic [ref=e19]:
+        - heading "资料摘要" [level=3] [ref=e20]
+        - list [ref=e21]:
+          - listitem [ref=e22]: 当前本地项目已形成“演示交互 + 本地知识库 + 食物成分查询”的可视化结构。
+          - listitem [ref=e23]: 知识层以中国食物成分表为结构化数据底座，并补充中国营养学会常见营养主题框架。
+          - listitem [ref=e24]: 减重、优质蛋白、食物多样化、控盐控油控糖、特殊人群营养，是当前优先呈现的中国营养知识主线。
+          - listitem [ref=e25]: 成人肥胖食养指南（2024年版）：已登记，等待深度抽取
+          - listitem [ref=e26]: 2025-2030 美国膳食指南：已作为当前演示主规则来源
+          - listitem [ref=e27]: 2023 中国居民膳食营养素参考摄入量 DRIs：已登记，等待深度抽取
+          - listitem [ref=e28]: 中国食物成分表：已结构化接入 300 条食物数据
+          - listitem [ref=e29]: 中国营养学会公开知识主题：已整理为本地知识卡片
+      - generic [ref=e30]:
+        - heading "中国食物成分查询" [level=3] [ref=e31]
+        - generic [ref=e32]:
+          - textbox "输入食物名，比如 鸡蛋 / 牛奶 / 大米" [ref=e33]
+          - button "查询" [ref=e34]
+        - generic [ref=e35]: 可查询已接入的中国食物成分表前 300 条数据。
+    - generic [ref=e36]:
+      - generic [ref=e37]:
+        - heading "中国营养知识卡片" [level=3] [ref=e38]
+        - generic [ref=e39]: 减重食养 优先控制总能量，保证蛋白质摄入，主食粗细搭配，减少高糖饮料和高能量零食。 • 三餐规律，不靠极端节食。 • 优先鱼、蛋、奶、瘦肉、豆制品等优质蛋白。 • 用蔬菜、全谷杂豆提高饱腹感。 日常膳食原则 坚持食物多样、谷类为主、蔬果奶豆齐全，少盐少油少糖。 • 每天尽量覆盖谷薯、蔬菜、水果、蛋白质食物与乳制品。 • 少吃高盐腌制、油炸、反式脂肪和超加工零食。 • 饮水优先，少用含糖饮料替代。 特殊人群关注 孕期、老年人、儿童青少年与体重管理人群，应额外关注蛋白质、钙、铁、叶酸、维生素D等。 • 孕期重点看叶酸、铁、钙与优质蛋白。 • 老年人重点防肌少，蛋白质分配到每餐。 • 儿童青少年重点避免用零食替代正餐。
+      - generic [ref=e40]:
+        - heading "当前接入重点" [level=3] [ref=e41]
+        - list [ref=e42]:
+          - listitem [ref=e43]: 成人减重不建议只靠断食或单一食物法，更稳的是控制总能量、提升蛋白质量和日常活动量。
+          - listitem [ref=e44]: 食养干预应强调长期可执行，而不是几天见效的极端方案。
+          - listitem [ref=e45]: 后续可继续把 DRIs 中的蛋白质、钙、铁、维生素D 等推荐量结构化进本地规则层。
+          - listitem [ref=e46]: 当前页面的食谱、生成人群建议、真实食物导向，仍以该指南作为演示生成框架。
+  - generic [ref=e48]: "[10:16:55] shim.html loaded"
