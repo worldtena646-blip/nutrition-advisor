@@ -1,0 +1,982 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>智能营养评估与咨询平台</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.2/marked.min.js"></script>
+
+    <style>
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+        /* 深度定制的 Markdown 报告样式 */
+        .markdown-body { font-size: 15px; color: #374151; line-height: 1.6; }
+        .markdown-body h1, .markdown-body h2 { color: #065f46; font-weight: 700; margin-top: 1.2em; margin-bottom: 0.6em; border-bottom: 1px solid #d1fae5; padding-bottom: 0.3em; }
+        .markdown-body h3 { color: #047857; font-weight: 600; margin-top: 1em; margin-bottom: 0.5em; }
+        .markdown-body p { margin-bottom: 0.8em; }
+        .markdown-body ul, .markdown-body ol { padding-left: 1.5em; margin-bottom: 1em; }
+        .markdown-body li { margin-bottom: 0.3em; }
+        .markdown-body strong { color: #064e3b; font-weight: 600; background-color: #ecfdf5; padding: 0 4px; border-radius: 4px; }
+        .markdown-body blockquote { border-left: 4px solid #10b981; background: #f0fdf4; padding: 10px 15px; margin: 1em 0; border-radius: 0 8px 8px 0; color: #065f46; font-size: 0.95em; }
+
+        .tag-checkbox:checked + span { background-color: #10b981; color: white; border-color: #10b981; }
+
+        .report-card { background: linear-gradient(to bottom right, #ffffff, #f0fdf4); border: 1px solid #a7f3d0; box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.1); }
+
+        /* 快捷输入标签动效 */
+        .quick-tag { transition: all 0.2s ease; cursor: pointer; }
+        .quick-tag:active { transform: scale(0.95); }
+    </style>
+</head>
+<body class="bg-gray-50 font-sans antialiased h-screen overflow-hidden flex relative">
+
+    <!-- 全局轻提示 Toast -->
+    <div id="toast" class="fixed top-10 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded-full shadow-xl z-[100] transition-all duration-300 opacity-0 pointer-events-none text-sm flex items-center gap-2">
+        <i class="fa-solid fa-circle-info"></i> <span id="toast-msg">提示信息</span>
+    </div>
+
+    <div class="flex w-full h-full max-w-7xl mx-auto shadow-2xl bg-white border-x border-gray-100 flex-col lg:flex-row">
+
+        <!-- 左侧：Chat / 咨询区域 -->
+        <main class="flex-1 flex flex-col h-full relative border-r border-gray-100">
+            <!-- Header -->
+            <header class="flex items-center justify-between p-4 bg-white border-b border-gray-100 shadow-sm z-10 shrink-0">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center text-white shadow-md">
+                        <i class="fa-solid fa-leaf text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-bold text-gray-900 text-lg leading-tight">智能营养咨询助手</h1>
+                        <p class="text-xs text-gray-500 font-medium">专注日常营养科普与健康膳食指导</p>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="resetAssessment()" class="hidden sm:flex text-xs bg-gray-100 hover:bg-gray-200 text-gray-600 px-3 py-1.5 rounded-lg font-medium transition-colors items-center gap-1">
+                        <i class="fa-solid fa-arrows-rotate"></i> 重新评估
+                    </button>
+                    <!-- 移动端呼出右侧面板的按钮 -->
+                    <button class="lg:hidden text-emerald-600 p-2" onclick="document.getElementById('right-panel').classList.toggle('hidden')">
+                        <i class="fa-solid fa-bars text-xl"></i>
+                    </button>
+                </div>
+            </header>
+
+            <!-- 咨询内容区 -->
+            <div id="chat-container" class="flex-1 overflow-y-auto p-4 sm:p-6 pb-32 scroll-smooth bg-gray-50/30">
+                <!-- 动态内容渲染区 -->
+            </div>
+
+            <!-- 输入区 -->
+            <div class="absolute bottom-0 left-0 w-full bg-gradient-to-t from-white via-white to-transparent pt-10 pb-4 px-4 sm:px-6 z-10">
+                <div class="max-w-4xl mx-auto relative">
+                    <div class="bg-white rounded-2xl shadow-[0_0_15px_rgba(0,0,0,0.05)] border border-gray-200 flex flex-col transition-shadow focus-within:shadow-[0_0_20px_rgba(16,185,129,0.15)] focus-within:border-emerald-300">
+                        <textarea id="user-input" rows="1"
+                            class="w-full bg-transparent text-gray-800 placeholder-gray-400 border-0 focus:ring-0 resize-none p-4 pb-2 rounded-t-2xl outline-none"
+                            placeholder="输入您的饮食疑问（如：我今天的早餐吃了一碗燕麦，够吗？）"></textarea>
+
+                        <div class="flex items-center justify-between px-4 pb-3 pt-1 rounded-b-2xl bg-white">
+                            <div class="flex gap-2 text-gray-400">
+                                <!-- 抓眼的转人工按钮，替换了原来无用的图片/语音功能 -->
+                                <button onclick="transferToHuman('资深营养师精准咨询')" class="text-xs bg-amber-50 text-amber-600 hover:bg-amber-100 border border-amber-200 px-3 py-1.5 rounded-lg font-bold transition-all flex items-center gap-1.5 shadow-sm hover:shadow">
+                                    <i class="fa-solid fa-headset animate-pulse"></i> 找真人营养师
+                                </button>
+                            </div>
+                            <button id="send-btn" class="bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl px-6 py-2 flex items-center gap-2 font-medium transition-all shadow-md hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed">
+                                <span>发送</span>
+                                <i class="fa-solid fa-paper-plane text-sm"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="text-center mt-3">
+                        <p class="text-xs text-gray-400 flex items-center justify-center gap-1 font-medium">
+                            <i class="fa-solid fa-circle-info text-amber-400"></i>
+                            声明：我们仅提供营养健康方面的咨询，并非专业医生，不可替代医疗诊断。如有疾病请就医。
+                        </p>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- 右侧：功能面板 (打卡与引流区) -->
+        <aside id="right-panel" class="w-full lg:w-80 bg-white flex flex-col h-full shrink-0 hidden lg:flex z-20 shadow-xl lg:shadow-none absolute lg:relative right-0">
+            <div class="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+                <h2 class="font-bold text-gray-800">健康管理控制台</h2>
+                <button class="lg:hidden text-gray-500" onclick="document.getElementById('right-panel').classList.add('hidden')"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+
+            <div class="flex-1 overflow-y-auto p-4 space-y-5">
+                <!-- 饮食记录与分析模块 -->
+                <div class="bg-white border border-gray-200 rounded-xl p-4 shadow-sm relative overflow-hidden">
+                    <div class="absolute -right-3 -top-3 text-orange-500/10 text-6xl pointer-events-none"><i class="fa-solid fa-utensils"></i></div>
+                    <div class="flex items-center justify-between mb-3 relative z-10">
+                        <h4 class="font-bold text-sm text-gray-800 flex items-center gap-2">
+                            <i class="fa-solid fa-bowl-food text-orange-500"></i> 饮食记录与分析
+                        </h4>
+                        <button onclick="openDietModal()" class="text-xs bg-orange-100 text-orange-700 font-bold px-2.5 py-1.5 rounded-lg hover:bg-orange-200 transition-colors shadow-sm">
+                            <i class="fa-solid fa-plus"></i> 记一笔
+                        </button>
+                    </div>
+                    <!-- 历史记录列表 -->
+                    <ul id="diet-history-list" class="space-y-2 mt-3 text-xs text-gray-600 relative z-10 max-h-32 overflow-y-auto pr-1">
+                        <li class="text-center text-gray-400 py-2 border border-dashed border-gray-200 rounded-lg" id="empty-diet-msg">
+                            暂无今日饮食记录<br>点击“记一笔”让AI为您分析
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- 运动与饮水追踪模块 -->
+                <div class="space-y-3">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider">日常习惯追踪</h3>
+
+                    <button id="btn-exercise" onclick="toggleCheckIn('btn-exercise', '🏃‍♂️ 运动打卡已完成')" class="w-full bg-white border border-gray-200 hover:border-emerald-300 hover:bg-emerald-50 rounded-xl p-3 flex items-center justify-between transition-all group">
+                        <div class="flex items-center gap-3">
+                            <div class="w-8 h-8 rounded-full bg-blue-100 text-blue-500 flex items-center justify-center group-hover:bg-blue-500 group-hover:text-white transition-colors"><i class="fa-solid fa-person-running"></i></div>
+                            <span class="font-medium text-gray-700 text-sm checkin-text">运动打卡</span>
+                        </div>
+                        <i class="fa-solid fa-circle-check text-gray-200 checkin-icon text-lg"></i>
+                    </button>
+
+                    <div class="bg-white border border-gray-200 rounded-xl p-4">
+                        <div class="flex justify-between items-center mb-2">
+                            <span class="text-sm font-medium text-gray-700"><i class="fa-solid fa-glass-water text-cyan-500 mr-1"></i> 饮水追踪</span>
+                            <span class="text-xs text-gray-500">800 / 2000 ml</span>
+                        </div>
+                        <div class="w-full bg-gray-100 rounded-full h-2">
+                            <div class="bg-cyan-400 h-2 rounded-full" style="width: 40%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 商业引流模块 -->
+                <div class="space-y-3 pt-2 border-t border-gray-100">
+                    <h3 class="text-xs font-bold text-gray-400 uppercase tracking-wider flex items-center justify-between">
+                        <span>专属进阶服务</span>
+                        <span class="text-[10px] bg-gray-100 text-gray-500 px-1.5 py-0.5 rounded"><i class="fa-solid fa-shield-halved"></i> 100%持证营养师</span>
+                    </h3>
+
+                    <!-- 引流款 -->
+                    <div class="bg-gradient-to-br from-emerald-50 to-teal-50 border border-emerald-100 rounded-xl p-4 relative overflow-hidden group cursor-pointer hover:border-emerald-300 transition-colors" onclick="transferToHuman('19.9元轻问诊')">
+                        <div class="absolute -right-4 -top-4 text-emerald-500/10 text-6xl group-hover:scale-110 transition-transform"><i class="fa-solid fa-user-doctor"></i></div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <h4 class="font-bold text-emerald-800 text-sm">人工营养师轻问诊</h4>
+                            <span class="bg-red-500 text-white text-[9px] px-1.5 py-0.5 rounded-sm font-bold">限时</span>
+                        </div>
+                        <p class="text-xs text-emerald-600/80 mb-3">15分钟专属在线解答，针对性排查营养误区。</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-lg font-black text-emerald-600">¥19.9 <span class="text-xs text-gray-400 line-through font-normal">¥99</span></span>
+                            <button class="bg-emerald-500 hover:bg-emerald-600 text-white text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm transition-colors">立即预约</button>
+                        </div>
+                    </div>
+
+                    <!-- 利润款 -->
+                    <div class="bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-100 rounded-xl p-4 relative overflow-hidden group cursor-pointer hover:border-amber-300 transition-colors" onclick="transferToHuman('299元定制食谱')">
+                        <div class="absolute -right-2 -top-2 text-amber-500/10 text-6xl group-hover:scale-110 transition-transform"><i class="fa-solid fa-crown"></i></div>
+                        <div class="flex items-center gap-2 mb-1">
+                            <h4 class="font-bold text-amber-800 text-sm">一周深度定制食谱</h4>
+                            <span class="bg-amber-500 text-white text-[9px] px-1.5 py-0.5 rounded-sm font-bold">推荐</span>
+                        </div>
+                        <p class="text-xs text-amber-700/70 mb-3">量身定制克重级食谱，含每日3次人工监督打卡。</p>
+                        <div class="flex items-center justify-between">
+                            <span class="text-lg font-black text-amber-600">¥299</span>
+                            <button class="bg-amber-500 hover:bg-amber-600 text-white text-xs px-3 py-1.5 rounded-lg font-medium shadow-sm transition-colors">获取方案</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- 健康档案问卷 Modal -->
+    <div id="questionnaire-modal" class="fixed inset-0 bg-gray-900/70 flex items-center justify-center z-50 backdrop-blur-md transition-opacity">
+        <div class="bg-white rounded-2xl shadow-2xl max-w-xl w-full mx-4 max-h-[90vh] flex flex-col overflow-hidden">
+            <div class="p-6 border-b border-emerald-100 bg-gradient-to-r from-emerald-50 to-teal-50 relative">
+                <h2 class="text-2xl font-bold text-gray-900 flex items-center gap-2">
+                    <i class="fa-solid fa-clipboard-check text-emerald-600"></i> 营养健康基线测定
+                </h2>
+                <p class="text-sm text-gray-600 mt-2">系统将为您生成通俗易懂的基础营养评估报告。</p>
+
+                <div id="bmi-display" class="absolute top-6 right-6 text-right hidden bg-white px-3 py-2 rounded-xl shadow-sm border border-emerald-100">
+                    <div class="text-[10px] text-gray-400 uppercase tracking-wider font-bold mb-1">实时 BMI 指数</div>
+                    <div class="flex items-baseline gap-1 justify-end">
+                        <div id="bmi-value" class="text-2xl font-black text-emerald-600 leading-none">--</div>
+                    </div>
+                    <div id="bmi-status" class="text-xs font-bold text-emerald-700 mt-1 bg-emerald-100 px-2 py-0.5 rounded inline-block">--</div>
+                </div>
+            </div>
+
+            <div class="p-6 overflow-y-auto flex-1 bg-white">
+                <form id="health-form" class="space-y-6">
+                    <div class="grid grid-cols-2 gap-5">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">年龄 <span class="text-red-500">*</span></label>
+                            <input type="number" id="q-age" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">性别 <span class="text-red-500">*</span></label>
+                            <select id="q-gender" class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                                <option value="女">女性</option>
+                                <option value="男">男性</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="grid grid-cols-2 gap-5">
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">身高 (cm) <span class="text-red-500">*</span></label>
+                            <input type="number" id="q-height" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-semibold text-gray-700 mb-1.5">当前体重 (kg) <span class="text-red-500">*</span></label>
+                            <input type="number" id="q-weight" required class="w-full px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none">
+                        </div>
+                    </div>
+
+                    <div class="bg-gray-50 p-4 rounded-xl border border-gray-100">
+                        <label class="block text-sm font-semibold text-gray-700 mb-3 flex justify-between items-center">
+                            <span>系统推荐评估维度 (可多选)</span>
+                        </label>
+                        <div id="dynamic-tags-container" class="flex flex-wrap gap-2 min-h-[60px] items-center justify-center">
+                            <span class="text-sm text-gray-400 text-center flex flex-col items-center gap-2 mt-2">
+                                <i class="fa-solid fa-user-pen text-2xl text-gray-300"></i>
+                                请先完善上方指标，激活标签推荐
+                            </span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <label class="block text-sm font-semibold text-gray-700 mb-1.5">其他健康或饮食诉求</label>
+                        <textarea id="q-concerns" rows="2" placeholder="如：想知道怎么吃能减肚子，或者老人牙口不好..." class="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl focus:ring-2 focus:ring-emerald-500 outline-none resize-none text-sm"></textarea>
+                        <!-- 快捷输入区 -->
+                        <div class="mt-2 flex flex-wrap gap-1.5" id="quick-tags-container">
+                            <span class="text-[10px] text-gray-400 mr-1 mt-1">快捷添加:</span>
+                            <span class="quick-tag bg-gray-100 hover:bg-emerald-50 text-gray-600 hover:text-emerald-600 border border-gray-200 text-xs px-2 py-1 rounded" onclick="addConcern('最近体检查出高血脂/高尿酸')">高血脂/高尿酸</span>
+                            <span class="quick-tag bg-gray-100 hover:bg-emerald-50 text-gray-600 hover:text-emerald-600 border border-gray-200 text-xs px-2 py-1 rounded" onclick="addConcern('经常便秘，肠胃不好')">肠胃不佳</span>
+                            <span class="quick-tag bg-gray-100 hover:bg-emerald-50 text-gray-600 hover:text-emerald-600 border border-gray-200 text-xs px-2 py-1 rounded" onclick="addConcern('睡眠质量差，容易疲劳')">容易疲劳</span>
+                            <span class="quick-tag bg-gray-100 hover:bg-emerald-50 text-gray-600 hover:text-emerald-600 border border-gray-200 text-xs px-2 py-1 rounded" onclick="addConcern('孕期怕长胖，想长胎不长肉')">孕期控重</span>
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="p-5 border-t border-gray-100 bg-gray-50 flex justify-between items-center">
+                <div class="text-xs text-gray-500 flex items-center gap-1">
+                    <i class="fa-solid fa-lock text-gray-400"></i> 数据已加密，仅用于营养评估
+                </div>
+                <button onclick="submitQuestionnaire()" class="px-6 py-2.5 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-bold transition-all shadow-md hover:shadow-lg flex items-center gap-2">
+                    生成评估报告 <i class="fa-solid fa-arrow-right"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- 饮食记录弹窗 -->
+    <div id="diet-record-modal" class="fixed inset-0 bg-gray-900/50 hidden items-center justify-center z-50 backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-2xl shadow-xl max-w-md w-full mx-4 overflow-hidden transform transition-all">
+            <div class="p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-gray-900 flex items-center gap-2"><i class="fa-solid fa-camera-retro text-orange-500"></i> 记录今日饮食</h3>
+                    <button onclick="closeDietModal()" class="text-gray-400 hover:text-gray-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+                </div>
+                <div class="bg-orange-50 border-l-4 border-orange-400 p-3 rounded mb-4">
+                    <p class="text-xs text-orange-700 font-medium">💡 提示：为了让 AI 分析更精准，请尽量写清楚食物种类和大概的<strong class="text-orange-600">分量</strong>（如：一小碗米饭、拳头大小的瘦肉）。</p>
+                </div>
+
+                <textarea id="diet-input-text" rows="4" class="w-full px-4 py-3 border border-gray-300 rounded-xl focus:ring-2 focus:ring-orange-500 outline-none resize-none text-sm mb-3" placeholder="例如：早餐吃了一个白煮蛋，一杯250ml纯牛奶，还有一小碗燕麦粥..."></textarea>
+
+                <div class="flex gap-3">
+                    <button onclick="closeDietModal()" class="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors">取消</button>
+                    <button onclick="submitDietRecord()" class="flex-1 px-4 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-bold transition-colors shadow-md flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-wand-magic-sparkles"></i> 提交并分析
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 支付确认弹窗 -->
+    <div id="payment-modal" class="fixed inset-0 bg-gray-900/40 hidden items-center justify-center z-50 backdrop-blur-sm transition-opacity">
+        <div class="bg-white rounded-2xl shadow-xl max-w-sm w-full mx-4 overflow-hidden transform transition-all">
+            <div class="p-6">
+                <div class="w-12 h-12 rounded-full bg-amber-100 text-amber-500 flex items-center justify-center mb-4 mx-auto">
+                    <i class="fa-solid fa-headset text-xl"></i>
+                </div>
+                <h3 class="text-lg font-bold text-center text-gray-900 mb-2" id="payment-title">服务确认</h3>
+                <p class="text-sm text-gray-600 text-center mb-6 leading-relaxed" id="payment-desc">
+                    您即将预约真人资深营养师专属服务。
+                </p>
+                <div class="flex gap-3">
+                    <button onclick="document.getElementById('payment-modal').classList.replace('flex','hidden')" class="flex-1 px-4 py-2 bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-xl font-medium transition-colors">暂不需要</button>
+                    <button onclick="proceedToHuman()" class="flex-1 px-4 py-2 bg-emerald-500 hover:bg-emerald-600 text-white rounded-xl font-medium transition-colors">确认并继续</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 【核心系统底层知识注入与绝对边界限定】
+        const baseSystemInstruction = `你是一个专业的AI营养咨询助手。你的底层系统已经过深度升级，隐式融合了最新营养学与临床医学知识库，包括但不限于：
+《中国居民膳食指南2022》及东方膳食模式、
+肥胖、高血压、高脂血症、高尿酸血症与痛风、糖尿病及妊娠期高血糖、慢性肾脏病、脑卒中、肿瘤等慢性病及重症的医学营养治疗/食养指南或专家共识、
+《0-3岁婴幼儿喂养建议》、《5岁以下儿童生长状况判定》及托育机构喂养指南、
+《肌少症膳食指导》、《肠外肠内营养学分册》及最新食品安全国家标准（标签、添加剂、特殊医学用途食品等）。
+你在进行成分分析、热量把控、减重/慢病干预时，请默默应用以上最新标准，但必须严格遵守以下对外输出规则：
+
+【绝对禁止（违规将导致系统崩溃）】：
+1. 绝对不要在给用户的任何对话中，透露你使用了上述哪些具体的国家指南、白皮书或数据库名称。（例如，绝对不可以说“根据《2024肥胖指南》”，只能说“根据最新的科学营养建议”）。
+2. 避免使用医疗诊断类的违禁词（如：治愈、治疗、处方药、确诊、开药等）。如果发现用户有疾病风险，必须明确提醒他去做体检或寻求专业医生帮助。
+
+【核心交互原则】：
+1. **角色界限**：在初次报告和必要的风险提示中，明确声明“我们仅提供营养健康方面的咨询，并非专业医生”。
+2. **通俗易懂与东方特色**：不用晦涩的医学术语，分析要亲切、接地气。结合东方膳食模式给出好操作的建议。适合大众特别是中老年人和孕妇阅读。
+3. **强制分量意识**：无论是你给用户提供饮食建议，还是用户汇报饮食让你分析，都【必须】明确具体的“分量”（例如：克数、拳头大小、几碗、勺等）。如果用户汇报的饮食没有说清楚分量，营养评估毫无意义，你必须在回答中严厉但友善地追问他吃了多少。
+`;
+
+        let dynamicSystemInstruction = baseSystemInstruction;
+        let userProfile = null;
+        let calculatedBmi = 0;
+        let bmiCategoryText = '';
+        let chatTurns = 0;
+        let dietRecords = [];
+
+        // DeepSeek API 配置（国内可用）
+        // 请从 https://platform.deepseek.com/ 获取您的 API Key
+        const apiKey = "sk-42a82066e2a849beba684327e1b27580";
+        const modelEndpoint = "https://api.deepseek.com/chat/completions";
+
+        // 检查是否配置了 API Key
+        function checkApiKey() {
+            if (!apiKey || apiKey === "") {
+                return false;
+            }
+            return true;
+        }
+
+        let chatHistory = [];
+        let isWaitingForResponse = false;
+        let currentServiceName = "";
+
+        const chatContainer = document.getElementById('chat-container');
+        const userInputBox = document.getElementById('user-input');
+        const sendBtn = document.getElementById('send-btn');
+        const inputAge = document.getElementById('q-age');
+        const inputGender = document.getElementById('q-gender');
+        const inputHeight = document.getElementById('q-height');
+        const inputWeight = document.getElementById('q-weight');
+        const tagsContainer = document.getElementById('dynamic-tags-container');
+        const bmiDisplay = document.getElementById('bmi-display');
+        const bmiValueEl = document.getElementById('bmi-value');
+        const bmiStatusEl = document.getElementById('bmi-status');
+
+        function init() {
+            const inputs = [inputAge, inputGender, inputHeight, inputWeight];
+            inputs.forEach(input => {
+                input.addEventListener('input', debounce(analyzeHealthData, 500));
+            });
+
+            userInputBox.addEventListener('keydown', function(e) {
+                if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(); }
+            });
+            userInputBox.addEventListener('input', function() {
+                this.style.height = 'auto';
+                this.style.height = (this.scrollHeight < 150 ? this.scrollHeight : 150) + 'px';
+            });
+            sendBtn.addEventListener('click', handleSend);
+        }
+
+        function debounce(func, wait) {
+            let timeout;
+            return function() {
+                clearTimeout(timeout);
+                timeout = setTimeout(() => func.apply(this, arguments), wait);
+            };
+        }
+
+        // 模拟 AI 回复（当没有 API Key 时使用）
+        function getSimulatedResponse(userMessage, isFirstReport = false) {
+            if (isFirstReport) {
+                return `## 🎉 您的营养健康评估报告
+
+### 1. 基础体型分析
+根据您提供的身高体重数据，您的 **BMI 为 ${calculatedBmi}**，属于**${bmiCategoryText}**范围。
+
+### 2. 潜在风险提醒
+- 保持当前体重，注意饮食均衡
+- 建议定期监测血压、血糖等指标
+- 如有不适请及时就医
+
+### 3. 日常饮食建议
+**早餐建议：**
+- 一碗燕麦粥（约50g干燕麦）
+- 一个水煮蛋
+- 一杯250ml纯牛奶
+
+**午餐建议：**
+- 主食：一碗米饭（约150g）
+- 蛋白质：掌心大小的瘦肉或鱼（约100g）
+- 蔬菜：两拳头的绿叶蔬菜
+
+**晚餐建议：**
+- 主食：半碗米饭（约100g）
+- 蛋白质：豆腐或鸡蛋
+- 蔬菜：多量蔬菜
+
+---
+> 💡 **温馨提示**：我们仅提供营养健康方面的咨询，并非专业医生。如有疾病症状，请务必前往医院就诊。`;
+            }
+
+            // 普通对话回复
+            const responses = [
+                `您好！感谢您的咨询。
+
+根据您描述的情况，我建议：
+
+1. **饮食搭配**：注意荤素搭配，每餐保证有蛋白质（肉、蛋、奶、豆）
+2. **分量控制**：主食控制在1-2拳头大小，蔬菜可以多吃
+3. **进餐时间**：规律三餐，晚餐不要太晚
+
+您还有其他具体的饮食问题吗？比如某道菜的做法、某种食物的营养价值等，我都可以为您详细解答。`,
+
+                `收到您的问题！
+
+从营养角度来看：
+
+**优点：**
+- 您的饮食意识很好
+- 愿意主动了解营养知识
+
+**建议改进：**
+- 注意食物的多样性，每天尽量吃12种以上食物
+- 控制油盐摄入，每天盐不超过5克，油不超过25克
+- 多喝水，每天1500-1700毫升
+
+如果您想要更精准的个性化建议，推荐您预约我们的**19.9元人工营养师轻问诊**服务，专业营养师会为您制定详细的饮食计划。`,
+
+                `谢谢您的信任！
+
+关于您的疑问，我的建议是：
+
+🥗 **膳食平衡原则**
+- 谷薯类：每天250-400g
+- 蔬菜水果：每天300-500g蔬菜，200-350g水果
+- 畜禽鱼蛋：每天120-200g
+- 奶类：每天300ml
+
+⏰ **饮食习惯**
+- 细嚼慢咽，每餐20-30分钟
+- 不暴饮暴食
+- 少吃腌制、油炸食品
+
+需要我针对您的具体情况给出更详细的建议吗？`
+            ];
+
+            // 根据对话轮数选择不同的回复
+            return responses[chatTurns % responses.length];
+        }
+
+        // 轻提示功能
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = message;
+            toast.classList.remove('opacity-0', 'pointer-events-none');
+            toast.classList.add('opacity-100', '-translate-y-4');
+
+            setTimeout(() => {
+                toast.classList.remove('opacity-100', '-translate-y-4');
+                toast.classList.add('opacity-0', 'pointer-events-none');
+            }, 2500);
+        }
+
+        // 快捷标签填入
+        function addConcern(text) {
+            const textarea = document.getElementById('q-concerns');
+            if(textarea.value.length > 0 && !textarea.value.endsWith('，') && !textarea.value.endsWith('。')) {
+                textarea.value += '，' + text;
+            } else {
+                textarea.value += text;
+            }
+        }
+
+        // 重新评估
+        function resetAssessment() {
+            if (isWaitingForResponse) return;
+            chatHistory = [];
+            chatTurns = 0;
+            dietRecords = [];
+            userProfile = null;
+            chatContainer.innerHTML = '';
+            document.getElementById('diet-history-list').innerHTML = `<li class="text-center text-gray-400 py-2 border border-dashed border-gray-200 rounded-lg" id="empty-diet-msg">暂无今日饮食记录<br>点击“记一笔”让AI为您分析</li>`;
+            document.getElementById('questionnaire-modal').classList.remove('hidden');
+        }
+
+        function analyzeHealthData() {
+            const age = parseInt(inputAge.value);
+            const gender = inputGender.value;
+            const height = parseFloat(inputHeight.value);
+            const weight = parseFloat(inputWeight.value);
+
+            if (!age || !height || !weight) return;
+
+            const bmi = (weight / ((height / 100) * (height / 100))).toFixed(1);
+            calculatedBmi = bmi;
+            let bmiColor = '';
+
+            if (bmi < 18.5) { bmiCategoryText = '偏瘦'; bmiColor = 'text-blue-500 bg-blue-100 border-blue-200'; }
+            else if (bmi >= 18.5 && bmi <= 23.9) { bmiCategoryText = '正常'; bmiColor = 'text-emerald-600 bg-emerald-100 border-emerald-200'; }
+            else if (bmi >= 24 && bmi <= 27.9) { bmiCategoryText = '超重'; bmiColor = 'text-amber-500 bg-amber-100 border-amber-200'; }
+            else { bmiCategoryText = '肥胖'; bmiColor = 'text-red-500 bg-red-100 border-red-200'; }
+
+            bmiDisplay.classList.remove('hidden');
+            bmiValueEl.innerText = bmi;
+            bmiStatusEl.className = `text-xs font-bold mt-1 px-2 py-0.5 rounded border inline-block ${bmiColor}`;
+            bmiStatusEl.innerText = bmiCategoryText;
+
+            let recommendedTags = [];
+            if (age < 18) {
+                recommendedTags.push("身体发育营养", "儿童青少年体重管理", "改善挑食");
+            } else if (age >= 50) {
+                recommendedTags.push("中老年基础营养补充", "骨骼与肌肉养护", "清淡减盐饮食", "日常血脂血压饮食控制");
+            } else {
+                if (gender === '女') {
+                    recommendedTags.push("孕产期营养", "健康减脂塑形", "改善气色饮食");
+                } else {
+                    recommendedTags.push("增肌减脂", "缓解疲劳饮食", "健康控制啤酒肚");
+                }
+            }
+            renderTags(recommendedTags);
+        }
+
+        function renderTags(tags) {
+            tagsContainer.innerHTML = '';
+            tagsContainer.classList.remove('justify-center');
+            tagsContainer.classList.add('justify-start');
+
+            tags.forEach((tag, index) => {
+                const tagId = `tag-${index}`;
+                const labelHtml = `
+                    <label class="relative inline-block m-1">
+                        <input type="checkbox" value="${tag}" class="tag-checkbox peer hidden" id="${tagId}" checked>
+                        <span class="block px-3 py-1.5 text-sm bg-white border border-gray-200 text-gray-700 rounded-lg cursor-pointer transition-all hover:bg-emerald-50 peer-checked:border-transparent peer-checked:shadow-md select-none font-medium">
+                            ${tag} <i class="fa-solid fa-check text-xs ml-1 hidden peer-checked:inline-block"></i>
+                        </span>
+                    </label>
+                `;
+                tagsContainer.insertAdjacentHTML('beforeend', labelHtml);
+            });
+        }
+
+        function updateSystemInstruction() {
+            let instruction = baseSystemInstruction;
+
+            if (userProfile) {
+                instruction += `\n\n【用户健康档案】
+- 年龄：${userProfile.age}岁
+- 性别：${userProfile.gender}
+- 身高：${userProfile.height}cm
+- 体重：${userProfile.weight}kg (BMI: ${userProfile.bmi}，属于：${userProfile.bmiCategory})
+- 关注点：${userProfile.tags.join('、')}
+- 补充说明：${userProfile.concerns || '无'}`;
+            }
+
+            if (dietRecords.length > 0) {
+                instruction += `\n\n【用户历史饮食记录（AI 记忆库）】\n该用户近期在系统中记录了以下饮食，请在分析和推荐时结合其健康档案和过去吃的内容进行综合评估：\n`;
+                dietRecords.forEach((record, index) => {
+                    instruction += `- [${record.date}]: ${record.content}\n`;
+                });
+            }
+
+            if (chatTurns >= 2) {
+                instruction += `\n\n【关键任务：商业引流】这已经是第 ${chatTurns} 轮对话了。请务必在这次回答的末尾，非常自然、友好地提示用户：AI的解答是基础的，如果要落地到每日每餐的具体克重、以及针对个人的精细化干预，推荐他们查看右侧面板，预约我们的【19.9元人工营养师轻问诊】或【299元一周深度定制食谱】服务。`;
+            }
+
+            dynamicSystemInstruction = instruction;
+        }
+
+        const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+        async function fetchWithRetry(url, options, retries = 5) {
+            const delays = [1000, 2000, 4000, 8000, 16000];
+            for (let i = 0; i < retries; i++) {
+                try {
+                    const response = await fetch(url, options);
+                    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+                    return await response.json();
+                } catch (error) {
+                    if (i === retries - 1) throw error;
+                    await sleep(delays[i]);
+                }
+            }
+        }
+
+        async function submitQuestionnaire() {
+            const age = parseInt(inputAge.value);
+            const gender = inputGender.value;
+            const height = parseFloat(inputHeight.value);
+            const weight = parseFloat(inputWeight.value);
+            const concerns = document.getElementById('q-concerns').value;
+
+            if (!age || !height || !weight) {
+                const btn = document.querySelector('#questionnaire-modal button');
+                const oldHTML = btn.innerHTML;
+                btn.innerHTML = `<i class="fa-solid fa-circle-exclamation"></i> 请完善必填指标`;
+                btn.classList.replace('bg-emerald-500', 'bg-red-500');
+                setTimeout(() => { btn.innerHTML = oldHTML; btn.classList.replace('bg-red-500', 'bg-emerald-500'); }, 2000);
+                return;
+            }
+
+            document.getElementById('questionnaire-modal').classList.add('hidden');
+
+            const selectedTagEls = document.querySelectorAll('.tag-checkbox:checked');
+            const selectedTags = Array.from(selectedTagEls).map(el => el.value);
+
+            userProfile = { age, gender, height, weight, bmi: calculatedBmi, bmiCategory: bmiCategoryText, tags: selectedTags, concerns };
+
+            updateSystemInstruction();
+
+            const firstInstruction = dynamicSystemInstruction + `\n\n【首次行动指令】由于这是初次交互，请用通俗易懂的语言，直接出具一份简明的《基础营养评估报告》。结构包括：1.基础体型分析 2.潜在风险提醒 3.日常饮食大方向指导。注意明确声明我们只是营养咨询而非医生。`;
+
+            const triggerPrompt = "我已经提交了我的身体数据。请为我出具一份通俗易懂的《基础营养风险评估报告》。";
+
+            chatHistory.push({ role: 'user', text: triggerPrompt });
+
+            const loadingId = appendLoading("正在分析您的健康指标...");
+            isWaitingForResponse = true;
+            updateBtnState();
+
+            try {
+                let responseText;
+
+                if (!checkApiKey()) {
+                    // 使用模拟回复
+                    await sleep(1500); // 模拟网络延迟
+                    responseText = getSimulatedResponse('', true);
+                } else {
+                    // 使用真实 API
+                    const messages = [{ role: 'system', content: firstInstruction }];
+                    chatHistory.forEach(msg => {
+                        messages.push({ role: msg.role === 'user' ? 'user' : 'assistant', content: msg.text });
+                    });
+
+                    const payload = {
+                        model: 'deepseek-chat',
+                        messages: messages,
+                        temperature: 0.7
+                    };
+
+                    const data = await fetchWithRetry(modelEndpoint, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${apiKey}`
+                        },
+                        body: JSON.stringify(payload)
+                    });
+
+                    responseText = data.choices[0].message.content;
+                }
+
+                removeElement(loadingId);
+                appendReportCard(responseText);
+                chatHistory.push({ role: 'model', text: responseText });
+            } catch (error) {
+                removeElement(loadingId);
+                appendMessage('model', `<span class="text-red-500"><i class="fa-solid fa-triangle-exclamation"></i> 生成失败，请重试。</span>`);
+            } finally {
+                isWaitingForResponse = false;
+                updateBtnState();
+            }
+        }
+
+        function openDietModal() { document.getElementById('diet-record-modal').classList.replace('hidden', 'flex'); }
+        function closeDietModal() { document.getElementById('diet-record-modal').classList.replace('flex', 'hidden'); }
+
+        async function submitDietRecord() {
+            const dietInput = document.getElementById('diet-input-text').value.trim();
+            if(!dietInput) return;
+
+            const now = new Date();
+            const timeString = `${now.getMonth()+1}月${now.getDate()}日 ${now.getHours()}:${String(now.getMinutes()).padStart(2, '0')}`;
+            dietRecords.push({ date: timeString, content: dietInput });
+
+            closeDietModal();
+            document.getElementById('diet-input-text').value = '';
+
+            const historyList = document.getElementById('diet-history-list');
+            const emptyMsg = document.getElementById('empty-diet-msg');
+            if(emptyMsg) emptyMsg.remove();
+
+            const li = document.createElement('li');
+            li.className = "bg-orange-50 border border-orange-100 rounded-lg p-2 text-orange-800 flex flex-col gap-1";
+            li.innerHTML = `<span class="text-[10px] text-orange-400 font-bold">${timeString}</span><span>${escapeHTML(dietInput)}</span>`;
+            historyList.prepend(li);
+
+            updateSystemInstruction();
+
+            if (window.innerWidth < 1024) {
+                document.getElementById('right-panel').classList.add('hidden');
+            }
+
+            const prompt = `我记录了刚才吃的饮食："${dietInput}"。请帮我进行营养分析。告诉我营养搭配是否合理？如果没有写清楚分量，请追问我！`;
+            appendMessage('user', prompt);
+            chatHistory.push({ role: 'user', text: prompt });
+            chatTurns++;
+
+            const loadingId = appendLoading("正在为您进行营养成分评估...");
+            isWaitingForResponse = true;
+            updateBtnState();
+
+            try {
+                const responseText = await callDeepSeekAPI(prompt);
+                removeElement(loadingId);
+                appendMessage('model', responseText);
+                chatHistory.push({ role: 'model', text: responseText });
+
+                if (chatTurns === 2) {
+                    setTimeout(() => autoPromptHumanService(), 2000);
+                }
+            } catch (error) {
+                removeElement(loadingId);
+                appendMessage('model', `<span class="text-red-500">网络连接异常，请重试。</span>`);
+            } finally {
+                isWaitingForResponse = false;
+                updateBtnState();
+            }
+        }
+
+        async function handleSend() {
+            const text = userInputBox.value.trim();
+            if (!text || isWaitingForResponse) return;
+
+            userInputBox.value = '';
+            userInputBox.style.height = 'auto';
+            userInputBox.focus();
+
+            appendMessage('user', text);
+            chatHistory.push({ role: 'user', text: text });
+
+            chatTurns++;
+            updateSystemInstruction();
+
+            const loadingId = appendLoading("营养助手思考中...");
+            isWaitingForResponse = true;
+            updateBtnState();
+
+            try {
+                const responseText = await callDeepSeekAPI(text);
+                removeElement(loadingId);
+                appendMessage('model', responseText);
+                chatHistory.push({ role: 'model', text: responseText });
+
+                if (chatTurns === 2) {
+                    setTimeout(() => autoPromptHumanService(), 2000);
+                }
+            } catch (error) {
+                removeElement(loadingId);
+                appendMessage('model', `<span class="text-red-500">网络连接异常，请重试。</span>`);
+            } finally {
+                isWaitingForResponse = false;
+                updateBtnState();
+            }
+        }
+
+        function updateBtnState() {
+            sendBtn.disabled = isWaitingForResponse;
+            if (isWaitingForResponse) {
+                sendBtn.innerHTML = `<i class="fa-solid fa-spinner fa-spin"></i>`;
+            } else {
+                sendBtn.innerHTML = `<span>发送</span><i class="fa-solid fa-paper-plane text-sm"></i>`;
+            }
+        }
+
+        async function callDeepSeekAPI(newUserText) {
+            // 检查是否有 API Key，如果没有使用模拟回复
+            if (!checkApiKey()) {
+                await sleep(1500); // 模拟网络延迟
+                return getSimulatedResponse(newUserText, false);
+            }
+
+            const messages = [{ role: 'system', content: dynamicSystemInstruction }];
+
+            chatHistory.forEach(msg => {
+                messages.push({
+                    role: msg.role === 'user' ? 'user' : 'assistant',
+                    content: msg.text
+                });
+            });
+
+            // 确保最后一条是用户消息
+            if (messages[messages.length - 1].role !== 'user') {
+                messages.push({ role: 'user', content: newUserText });
+            }
+
+            const payload = {
+                model: 'deepseek-chat',
+                messages: messages,
+                temperature: 0.7
+            };
+
+            const data = await fetchWithRetry(modelEndpoint, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${apiKey}`
+                },
+                body: JSON.stringify(payload)
+            });
+
+            if (data.choices && data.choices[0] && data.choices[0].message) {
+                return data.choices[0].message.content;
+            } else {
+                throw new Error("Invalid format");
+            }
+        }
+
+        function appendMessage(role, text) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `flex w-full mb-6 ${role === 'user' ? 'justify-end' : 'justify-start'}`;
+
+            const isUser = role === 'user';
+            const bubbleBg = isUser ? 'bg-emerald-500 text-white' : 'bg-white border border-gray-100 shadow-sm text-gray-800';
+            const roundedClass = isUser ? 'rounded-2xl rounded-tr-sm' : 'rounded-2xl rounded-tl-sm';
+
+            let avatarHtml = '';
+            if (!isUser) {
+                avatarHtml = `<div class="flex-shrink-0 mr-3 mt-1"><div class="w-8 h-8 rounded-full bg-emerald-50 border border-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm"><i class="fa-solid fa-leaf text-sm"></i></div></div>`;
+            }
+
+            let formattedText = isUser ? escapeHTML(text).replace(/\n/g, '<br>') : (typeof marked !== 'undefined' ? marked.parse(text) : escapeHTML(text));
+
+            msgDiv.innerHTML = `
+                ${avatarHtml}
+                <div class="max-w-[90%] sm:max-w-[80%] px-5 py-4 ${bubbleBg} ${roundedClass}">
+                    <div class="markdown-body">
+                        ${formattedText}
+                    </div>
+                </div>
+            `;
+            chatContainer.appendChild(msgDiv);
+            scrollToBottom();
+        }
+
+        function appendReportCard(markdownText) {
+            const msgDiv = document.createElement('div');
+            msgDiv.className = `flex w-full mb-8 justify-start`;
+
+            let avatarHtml = `<div class="flex-shrink-0 mr-3 mt-1 relative"><div class="w-10 h-10 rounded-full bg-emerald-100 border border-white shadow-md flex items-center justify-center text-emerald-600"><i class="fa-solid fa-clipboard-user"></i></div></div>`;
+            let formattedText = typeof marked !== 'undefined' ? marked.parse(markdownText) : escapeHTML(markdownText);
+
+            msgDiv.innerHTML = `
+                ${avatarHtml}
+                <div class="max-w-[95%] sm:max-w-[85%] px-6 py-5 rounded-2xl rounded-tl-sm report-card relative overflow-hidden">
+                    <div class="absolute top-0 right-0 w-32 h-32 bg-emerald-500 opacity-5 rounded-bl-full pointer-events-none"></div>
+                    <div class="markdown-body">
+                        ${formattedText}
+                        <blockquote class="text-xs mt-4 text-emerald-700 bg-emerald-50 p-2 border-l-2 border-emerald-500">
+                            注：本报告仅供日常营养健康参考，并非医疗诊断。不可替代专业医生的诊疗方案。如有疾病症状请务必前往医院就诊。
+                        </blockquote>
+                    </div>
+                </div>
+            `;
+            chatContainer.appendChild(msgDiv);
+            scrollToBottom();
+        }
+
+        function appendLoading(loadingText = "正在分析...") {
+            const id = 'loading-' + Date.now();
+            const msgDiv = document.createElement('div');
+            msgDiv.id = id;
+            msgDiv.className = `flex w-full mb-6 justify-start`;
+            msgDiv.innerHTML = `
+                <div class="flex-shrink-0 mr-3 mt-1"><div class="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-500 border border-emerald-100"><i class="fa-solid fa-circle-notch fa-spin text-sm"></i></div></div>
+                <div class="max-w-[85%] px-5 py-3 bg-white border border-gray-100 shadow-sm rounded-2xl rounded-tl-sm text-gray-500 flex items-center gap-3 text-sm">
+                    ${loadingText}
+                </div>
+            `;
+            chatContainer.appendChild(msgDiv);
+            scrollToBottom();
+            return id;
+        }
+
+        function removeElement(id) {
+            const el = document.getElementById(id);
+            if (el) el.remove();
+        }
+
+        function scrollToBottom() {
+            setTimeout(() => { chatContainer.scrollTop = chatContainer.scrollHeight; }, 100);
+        }
+
+        function escapeHTML(str) {
+            return str.replace(/[&<>'"]/g, tag => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', "'": '&#39;', '"': '&quot;' }[tag] || tag));
+        }
+
+        function toggleCheckIn(btnId, activeText) {
+            const btn = document.getElementById(btnId);
+            const icon = btn.querySelector('.checkin-icon');
+            const text = btn.querySelector('.checkin-text');
+
+            btn.classList.toggle('bg-emerald-50');
+            btn.classList.toggle('border-emerald-300');
+
+            if (icon.classList.contains('text-gray-200')) {
+                icon.classList.replace('text-gray-200', 'text-emerald-500');
+                text.innerText = activeText;
+                showToast("打卡成功！坚持就是胜利！");
+            } else {
+                icon.classList.replace('text-emerald-500', 'text-gray-200');
+                text.innerText = activeText.replace('已完成', '').replace('已上传', '');
+            }
+        }
+
+        function transferToHuman(serviceName) {
+            if (isWaitingForResponse) return;
+            currentServiceName = serviceName;
+
+            const modal = document.getElementById('payment-modal');
+            const title = document.getElementById('payment-title');
+            const desc = document.getElementById('payment-desc');
+
+            title.innerText = `预约服务确认`;
+            desc.innerHTML = `您正在预约真人的 <span class="text-amber-600 font-bold">${serviceName}</span> 服务。<br>由于需要专业营养师介入评估，此项属于高级人工服务。是否确认继续？`;
+
+            modal.classList.replace('hidden', 'flex');
+        }
+
+        function autoPromptHumanService() {
+            if (isWaitingForResponse) return;
+            currentServiceName = "19.9元轻问诊";
+
+            const modal = document.getElementById('payment-modal');
+            const title = document.getElementById('payment-title');
+            const desc = document.getElementById('payment-desc');
+
+            title.innerHTML = `<i class="fa-solid fa-gift text-amber-500 mr-2"></i>服务升级提示`;
+            desc.innerHTML = `您已与智能助手进行了两轮深入交流。<br><br>AI 的解答为基础指导，如果您需要落地到每日每餐的<span class="text-amber-600 font-bold">具体克重、定制食谱及人工精准干预</span>，强烈建议您预约真人资深营养师服务。是否前往预约？`;
+
+            modal.classList.replace('hidden', 'flex');
+        }
+
+        function proceedToHuman() {
+            document.getElementById('payment-modal').classList.replace('flex', 'hidden');
+
+            if (window.innerWidth < 1024) {
+                document.getElementById('right-panel').classList.add('hidden');
+            }
+
+            appendMessage('user', `我已经预约了您的【${currentServiceName}】服务。`);
+
+            setTimeout(() => {
+                const id = appendLoading("正在转接专职人工营养师...");
+                setTimeout(() => {
+                    removeElement(id);
+                    appendMessage('model', `您好！我是您的专属真人营养师（编号：RD8023）。我已经收到您的服务订单（${currentServiceName}）及刚才您与AI的评估记录。\n\n由于我们需要落地到具体的食谱和克重，接下来我会全程为您提供一对一的专业辅导。请问您平时的一日三餐都是自己做还是点外卖居多呢？我们准备开始吧！`);
+                }, 2000);
+            }, 300);
+        }
+
+        window.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
